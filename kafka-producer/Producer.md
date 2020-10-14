@@ -9,7 +9,7 @@
              If we didn’t, the partitioner will choose a partition for us, usually based on the ProducerRecord key.
     Step #3: Adds the record to a batch of records that will also be sent to the same topic and partition
     Step #4: A separate thread is responsible for sending those batches of records to the appropriate Kafka brokers.
-    Step #5: Broker receives the messages, it sends back a response.
+    Step #5: Broker receives the messages, it sends back a response
              Successful : it will return a RecordMetadata object with the topic, partition, and the offset of the record within the partition.
              Failed: it will return a error code, producer may retry sending few more times before giving up and returning an error.
 
@@ -123,5 +123,63 @@
 
     This will ensure the minimum number of replicas are in sync.
     NotEnoughReplicasException will be thrown to the producer when the in-sync replicas are less then what is configured.
+    
+**Which errors are retriable from Kafka Producer?**
+```
+    LEADER_NOT_AVAILABLE, 
+    NOT_LEADER_FOR_PARTITION, 
+    UNKNOWN_TOPIC_OR_PARTITION
+```  
+**Kafka Producer throw error for following non-retriable errors:**
+```
+    OFFSET_OUT_OF_RANGE
+    BROKER_NOT_AVAILABLE
+    MESSAGE_TOO_LARGE
+    INVALID_TOPIC_EXCEPTION
+```  
+**When produce to a topic which doesn't exist and auto.create.topic.enable=true** 
+    then kafka creates the topic automatically with the broker/topic settings num.partition and default.replication.factor  
+  
+**What is a generic unique id which can be used for a message received from a consumer?**
+    Topic + Partition + Offset      
+    
+**Safe Producer Configuration**    
+```
+min.insync.replicas=2 (set at broker or topic level)
+retries=MAX_INT number of reties by producer in case of transient failure/exception. (default is 0)
+max.in.flight.per.connection number=5 number of producer request can be made in parallel (default is 5)
+acks=all
+enable.idempotence=true producer send producerId with each message to identify for duplicate msg at kafka end. 
+When kafka receives duplicate message with same producerId which it already committed. It do not commit it again and send ack to producer (default is false)
+```
+**High Throughput Producer using compression and batching**   
+```
+compression.type=snappy value can be none(default), gzip, lz4, snappy. 
+    Compression is enabled at the producer level and doesn't require any config change in broker or consumer 
+    Compression is more effective in case of bigger batch of messages being sent to kafka
+linger.ms=20 Number of millisecond a producer is willing to wait before sending a batch out. 
+    (default 0). Increase linger.ms value increase the chance of batching.
+batch.size=32KB or 64KB Maximum number of bytes that will be included in a batch (default 16KB).
+    Any message bigger than the batch size will not be batched.
+```
+**Message Key**  
+```
+Producer can choose to send a key with message.
+If key = null, data is send in round robin
+If key is sent, then all message for that key will always go to same partition. 
+    This can be used to order the messages for a specific key since order is guaranteed in same partition.
+Adding a partition to the topic will lose the guarantee of same key go to same partition.
+Keys are hashed using murmur2 algorithm by default.
+```
 
-
+Setting the retries parameter to nonzero, and the
+**max.in.flights.requests.per.session** (Note the word session not connection)
+ m ax.in.flights.requests.per.session value to more than one means that it is possible that the broker will fail to write the first batch of
+ messages, succeed to write the second (which was already inflight),
+ and then retry the first batch and succeed, thereby reversing the order.
+ so to guaranteeing order is critical, we recommend
+ setting in.flight.requests.per.session=1 to make sure that
+ while a batch of messages is retrying, additional messages will not
+ be sent (because this has the potential to reverse the correct order).
+ This will severely limit the throughput of the producer, so only use
+ this when order is important.

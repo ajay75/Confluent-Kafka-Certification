@@ -33,8 +33,11 @@
 
 **What are the type of windowing options in streams?**
 
-    1. Tumbling window or sliding window
-    2. hoping window
+    1. Tumbling window or sliding window (No overlap/gap)
+    2. hoping window (with overlap or gaps)
+    3. session window (Dynamic window formed around period of
+                       activity/idle based on timestap, e.g 
+                       user click activtity tracking)
 
 **How out of sync records are handled in streams?**
 

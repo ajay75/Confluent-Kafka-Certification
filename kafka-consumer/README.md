@@ -110,4 +110,14 @@
     ConsumerRebalanceListener onPartitionsRevoked(Collection<TopicPartition> partitions) and onPartitionsRevoked(Collection<TopicPartition> partitions).
     consumer.subscribe(topics, new HandleRebalanceCsutomListener());
     
-    
+**Consumer Heartbeat Thread**
+    Heartbeat mechanism is used to detect if consumer application in dead.
+    session.timeout.ms=10s (default), If heartbeat is not sent in 10 second period, the consumer is considered dead. 
+        Set lower value to faster consumer rebalance.
+    heartbeat.interval.ms=3s (default), Heartbeat is sent in every 3 seconds interval. Usually 1/3rd of session.timeout.ms    
+
+**Consumer Poll Thread**
+    Poll mechanism is also used to detect if consumer application is dead.
+    max.poll.interval.ms = 5min (default), Max amount of time between two .poll() calls before declaring consumer dead. 
+        If processing of message batch takes more time in general application than should increase the interval.    
+        
